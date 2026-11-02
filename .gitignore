@@ -1,0 +1,10 @@
+/build/
+/emergency_search
+/a.out
+*.exe
+*.o
+*.obj
+*.pdb
+*.ilk
+*.dSYM/
+.DS_Store
