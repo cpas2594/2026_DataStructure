@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 
-
 namespace {
 void requireTrue(bool ok, const char* expression, const char* file, int line) {
     if (!ok) {
