@@ -24,4 +24,3 @@ private:
     const HospitalIdIndex& byId_;
     const HospitalNameIndex& byName_;
 };
-#pragma once
