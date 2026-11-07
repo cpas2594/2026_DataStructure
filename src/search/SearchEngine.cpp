@@ -1,4 +1,57 @@
 #include "search/SearchEngine.h"
 
-// TODO: 완전 일치는 해시 테이블, 부분 일치는 원본 배열 순회로 구현.
-// HPID와 병원명 완전 일치가 동시에 가능한 경우의 우선순위는 구현 전 확정합니다.
+#include <cctype>
+
+SearchEngine::SearchEngine(const std::vector<Hospital>& hospitals,
+                           const HospitalIdIndex& byId,
+                           const HospitalNameIndex& byName)
+    : hospitals_(hospitals), byId_(byId), byName_(byName) {}
+
+std::string SearchEngine::trim(const std::string& input) {
+    std::size_t start = 0;
+    while (start < input.size() &&
+           std::isspace(static_cast<unsigned char>(input[start]))) {
+        ++start;
+    }
+    std::size_t end = input.size();
+    while (end > start &&
+           std::isspace(static_cast<unsigned char>(input[end - 1]))) {
+        --end;
+    }
+    return input.substr(start, end - start);
+}
+
+std::vector<Hospital> SearchEngine::search(const std::string& input) const {
+    const std::string key = trim(input);
+
+    if (key.empty()) {
+        return hospitals_;
+    }
+
+    // 1. HPID가 정확히 일치하면 단일 병원 반환 (평균 O(1)).
+    if (const std::size_t* index = byId_.find(key)) {
+        if (*index < hospitals_.size() && hospitals_[*index].id == key) {
+            return {hospitals_[*index]};
+        }
+    }
+
+    if (const std::vector<std::string>* ids = byName_.find(key)) {
+        std::vector<Hospital> result;
+        result.reserve(ids->size());
+        for (const std::string& id : *ids) {
+            const std::size_t* index = byId_.find(id);
+            if (index != nullptr && *index < hospitals_.size() &&
+                hospitals_[*index].id == id && hospitals_[*index].name == key) {
+                result.push_back(hospitals_[*index]);
+            }
+        }
+        return result;
+    }
+    std::vector<Hospital> result;
+    for (const Hospital& hospital : hospitals_) {
+        if (hospital.name.find(key) != std::string::npos) {
+            result.push_back(hospital);
+        }
+    }
+    return result;
+}
