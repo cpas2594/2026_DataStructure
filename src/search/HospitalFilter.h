@@ -13,9 +13,9 @@ struct FilterConditions {
 
 class HospitalFilter {
 public:
-    // 선택한 자치구, 병원 종류, 응급의료기관 종류가 완전히 일치하는 병원을
-    // 입력 순서대로 반환합니다.
-    // 미선택 조건은 검사하지 않으며, 원본 후보는 변경하지 않습니다.
+    // 선택한 조건을 모두 만족하는 병원만 반환합니다(AND, 각 조건은 완전 일치).
+    // 빈 조건은 통과하며, 모든 조건이 비어 있으면 전체 후보를 반환합니다.
+    // 원본 후보는 변경하지 않고, 결과는 입력 순서를 유지합니다.
     static std::vector<Hospital> apply(
         const std::vector<Hospital>& candidates,
         const FilterConditions& conditions
