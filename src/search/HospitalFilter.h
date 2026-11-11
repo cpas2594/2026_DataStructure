@@ -1,4 +1,23 @@
 #pragma once
 
-// 역할: 검색 후보에 선택 조건을 적용하는 기능의 선언.
-// TODO: 저장소, 후보 목록, 검색 조건을 받아 필터 결과를 반환할 인터페이스 선언.
+#include <string>
+#include <vector>
+
+struct Hospital;
+
+struct FilterConditions {
+    std::string district;  // 빈 문자열은 지역 미선택입니다.
+    std::string hospitalType;  // 빈 문자열은 병원 종류 미선택입니다.
+    std::string emergencyType;  // 빈 문자열은 응급의료기관 종류 미선택입니다.
+};
+
+class HospitalFilter {
+public:
+    // 선택한 자치구, 병원 종류, 응급의료기관 종류가 완전히 일치하는 병원을
+    // 입력 순서대로 반환합니다.
+    // 미선택 조건은 검사하지 않으며, 원본 후보는 변경하지 않습니다.
+    static std::vector<Hospital> apply(
+        const std::vector<Hospital>& candidates,
+        const FilterConditions& conditions
+    );
+};
