@@ -1,4 +1,26 @@
 #pragma once
 
-// 역할: 검색어에 맞는 병원 후보를 찾는 기능의 선언.
-// TODO: 빈 검색어, HPID/병원명 완전 일치, 병원명 부분 검색 인터페이스 선언.
+#include "model/Hospital.h"               
+#include "structures/HashTable.hpp"       
+#include <cstddef>
+#include <string>
+#include <vector>
+
+using HospitalIdIndex = HashTable<std::size_t>;
+using HospitalNameIndex = HashTable<std::vector<std::string>>;
+
+class SearchEngine {
+public:
+    SearchEngine(const std::vector<Hospital>& hospitals,
+                 const HospitalIdIndex& byId,
+                 const HospitalNameIndex& byName);
+
+    std::vector<Hospital> search(const std::string& input) const;
+
+    static std::string trim(const std::string& input);
+
+private:
+    const std::vector<Hospital>& hospitals_;
+    const HospitalIdIndex& byId_;
+    const HospitalNameIndex& byName_;
+};
