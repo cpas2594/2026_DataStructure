@@ -12,6 +12,10 @@ std::vector<Hospital> HospitalFilter::apply(
             hospital.district != conditions.district) {
             continue;
         }
+        if (!conditions.hospitalType.empty() &&
+            hospital.hospitalType != conditions.hospitalType) {
+            continue;
+        }
         result.push_back(hospital);
     }
     return result;
