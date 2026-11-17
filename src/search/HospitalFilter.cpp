@@ -1,4 +1,18 @@
 #include "search/HospitalFilter.h"
 
-// TODO: 지역, 병원 종류, 응급의료기관 종류 조건을 AND로 적용.
-// 선택하지 않은 조건은 검사하지 않습니다.
+#include "model/Hospital.h"
+
+std::vector<Hospital> HospitalFilter::apply(
+    const std::vector<Hospital>& candidates,
+    const FilterConditions& conditions
+) {
+    std::vector<Hospital> result;
+    for (const Hospital& hospital : candidates) {
+        if (!conditions.district.empty() &&
+            hospital.district != conditions.district) {
+            continue;
+        }
+        result.push_back(hospital);
+    }
+    return result;
+}
