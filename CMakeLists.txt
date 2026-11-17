@@ -31,4 +31,37 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(emergency_search PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-# tests/는 주석만 있는 자리입니다. 실제 테스트 작성 후 별도 대상으로 추가합니다.
+# ---------------------------------------------------------------------------
+# 테스트와 성능 측정
+#   cmake -S . -B build && cmake --build build && ctest --test-dir build --output-on-failure
+# ---------------------------------------------------------------------------
+option(BUILD_TESTS "Build unit tests and benchmarks" ON)
+
+function(add_project_executable name)
+    add_executable(${name} ${ARGN})
+    set_target_properties(${name} PROPERTIES
+        CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+    target_include_directories(${name} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    if(MSVC)
+        target_compile_options(${name} PRIVATE /W4 /utf-8)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(${name} PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+endfunction()
+
+function(add_project_test name)
+    add_project_executable(${name} ${ARGN})
+    add_test(NAME ${name} COMMAND ${name})
+endfunction()
+
+if(BUILD_TESTS)
+    enable_testing()
+
+    # 병원 검색 / Hash Table (박수연)
+    add_project_test(test_hash_table tests/test_hash_table.cpp)
+    add_project_test(test_search tests/test_search.cpp src/search/SearchEngine.cpp)
+    add_project_test(test_hospital_store tests/test_hospital_store.cpp
+        src/data/HospitalStore.cpp src/search/SearchEngine.cpp)
+    add_project_executable(bench_search tools/bench_search.cpp
+        src/data/HospitalStore.cpp src/search/SearchEngine.cpp)
+endif()
