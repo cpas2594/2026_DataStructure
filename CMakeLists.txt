@@ -31,10 +31,6 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(emergency_search PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-# ---------------------------------------------------------------------------
-# 테스트와 성능 측정
-#   cmake -S . -B build && cmake --build build && ctest --test-dir build --output-on-failure
-# ---------------------------------------------------------------------------
 option(BUILD_TESTS "Build unit tests and benchmarks" ON)
 
 function(add_project_executable name)
@@ -57,7 +53,6 @@ endfunction()
 if(BUILD_TESTS)
     enable_testing()
 
-    # 병원 검색 / Hash Table (박수연)
     add_project_test(test_hash_table tests/test_hash_table.cpp)
     add_project_test(test_search tests/test_search.cpp src/search/SearchEngine.cpp)
     add_project_test(test_hospital_store tests/test_hospital_store.cpp
