@@ -85,7 +85,6 @@ int main() {
     CHECK(emptyEngine.search("").empty());
     CHECK(emptyEngine.search("서울").empty());
 
-    // 검색 경로(MatchType) 확인
     CHECK(engine.searchDetailed("").matchType == MatchType::All);
     CHECK(engine.searchDetailed("A1100002").matchType == MatchType::ExactId);
     CHECK(engine.searchDetailed("서울중앙병원").matchType == MatchType::ExactName);
@@ -93,19 +92,17 @@ int main() {
     CHECK(engine.searchDetailed("없는병원").matchType == MatchType::PartialName);
     CHECK(engine.searchDetailed("없는병원").hospitals.empty());
 
-    // HPID는 대소문자를 구분하지 않는다
     result = engine.search(" a1100002 ");
     CHECK(result.size() == 1 && result[0].id == "A1100002");
     CHECK(SearchEngine::normalizeId(" a1100002\t") == "A1100002");
-    CHECK(SearchEngine::normalizeId("가a1") == "가A1");  // 한글 바이트는 바꾸지 않는다
+    CHECK(SearchEngine::normalizeId("가a1") == "가A1");
 
-    // 공식 인덱스 구축 함수: 빈 HPID, 중복 HPID, 중복 병원명, 앞뒤 공백
     {
         const std::vector<Hospital> raw = {
             makeHospital(" a1 ", "  가나병원 "),
-            makeHospital("A1", "다른병원"),       // 정규화하면 같은 HPID
+            makeHospital("A1", "다른병원"),
             makeHospital("", "HPID없음"),
-            makeHospital("A2", "가나병원"),       // 같은 이름, 다른 HPID
+            makeHospital("A2", "가나병원"),
             makeHospital("A3", "가나병원 별관"),
         };
         HospitalIdIndex ids;
@@ -124,14 +121,13 @@ int main() {
         SearchEngine e(stored, ids, names);
         auto r = e.searchDetailed("가나병원");
         CHECK(r.matchType == MatchType::ExactName);
-        CHECK(r.hospitals.size() == 2);  // 원본에 공백이 있던 " a1 "도 찾는다
+        CHECK(r.hospitals.size() == 2);
         r = e.searchDetailed("A1");
         CHECK(r.matchType == MatchType::ExactId && r.hospitals.size() == 1);
         r = e.searchDetailed("별관");
         CHECK(r.matchType == MatchType::PartialName && r.hospitals.size() == 1);
     }
 
-    // HPID와 병원명이 같은 문자열이면 HPID(고유 키)가 우선
     {
         const std::vector<Hospital> tricky = {
             makeHospital("B100", "병원B"),

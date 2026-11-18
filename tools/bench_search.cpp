@@ -1,17 +1,3 @@
-// 박수연 담당: 검색 성능 측정
-//
-// 제안서 완료 기준: "데이터 크기 N 증가에 따른 검색 응답 시간과 메모리 사용량을 측정한다."
-// 실제 CSV는 77행이라 차이가 잘 드러나지 않으므로, 같은 형식의 병원 데이터를 N개 만들어 측정합니다.
-//
-// 측정 항목 (한 번 검색당 평균 시간, 마이크로초)
-//   HPID 해시 : 해시 테이블 HPID 완전 일치        -> 평균 O(1)
-//   HPID 순차 : 같은 검색을 배열 순차 탐색으로    -> O(N)  (해시 테이블과 비교용 기준선)
-//   이름 해시 : 병원명 완전 일치 (같은 이름 2곳)  -> 평균 O(1 + B)
-//   부분 검색 : 병원명 부분 일치                 -> O(N)
-// 메모리: 인덱스가 차지하는 대략적인 바이트 수 (문자열 capacity + 버킷 배열 + 엔트리 크기)
-//
-// 실행: ./build/bench_search        (Release 빌드 권장: cmake -DCMAKE_BUILD_TYPE=Release)
-
 #include "data/HospitalStore.h"
 
 #include <chrono>
@@ -23,7 +9,6 @@ namespace {
 
 using Clock = std::chrono::steady_clock;
 
-// 결과를 최적화로 지우지 못하게 합니다.
 volatile std::size_t g_sink = 0;
 
 std::string makeId(std::size_t i) {
@@ -38,7 +23,6 @@ std::vector<Hospital> makeHospitals(std::size_t n) {
     for (std::size_t i = 0; i < n; ++i) {
         Hospital h{};
         h.id = makeId(i);
-        // 2곳씩 같은 이름(중복 병원명)을 갖도록 합니다.
         h.name = "서울병원" + std::to_string(i / 2);
         h.district = "강남구";
         h.hospitalType = "종합병원";
@@ -62,24 +46,21 @@ std::size_t stringBytes(const std::string& s) {
     return sizeof(std::string) + (s.capacity() > 15 ? s.capacity() + 1 : 0);
 }
 
-// 인덱스(byId, byName)의 대략적인 메모리 사용량
 std::size_t estimateIndexBytes(const HospitalStore& store) {
     const HospitalIdIndex& byId = store.idIndex();
     const HospitalNameIndex& byName = store.nameIndex();
-    // 버킷 배열: 버킷마다 vector 객체 하나
     std::size_t bytes = byId.bucketCount() * sizeof(std::vector<std::pair<std::string, std::size_t>>);
     bytes += byName.bucketCount() * sizeof(std::vector<std::pair<std::string, std::vector<std::string>>>);
     for (const Hospital& h : store.hospitals()) {
-        bytes += stringBytes(h.id) + sizeof(std::size_t);  // byId 엔트리
-        bytes += stringBytes(h.id);                        // byName의 HPID 목록 원소
+        bytes += stringBytes(h.id) + sizeof(std::size_t);
+        bytes += stringBytes(h.id);
     }
-    // byName 엔트리: 이름 key + vector 객체 (이름 수 = N / 2)
     bytes += byName.size() *
              (sizeof(std::string) + 16 + sizeof(std::vector<std::string>));
     return bytes;
 }
 
-}  // namespace
+}
 
 int main() {
     const std::vector<std::size_t> sizes = {1000, 5000, 10000, 50000, 100000, 200000};
