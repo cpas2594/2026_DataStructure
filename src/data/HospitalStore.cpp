@@ -18,7 +18,7 @@ bool HospitalStore::add(const Hospital& hospital) {
         return false;
     }
 
-    hospitals_.push_back(std::move(normalized));
+    hospitals_.push_back(normalized);
     return true;
 }
 
