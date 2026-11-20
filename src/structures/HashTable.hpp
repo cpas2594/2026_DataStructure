@@ -3,18 +3,41 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
-#include <utility>
-#include <vector>
 
-// 박수연 담당: 문자열 key 기반 해시 테이블
 template <typename Value>
 class HashTable {
 public:
     static constexpr std::size_t kDefaultBucketCount = 8;
 
     explicit HashTable(std::size_t initialBucketCount = kDefaultBucketCount)
-        : buckets_(initialBucketCount == 0 ? kDefaultBucketCount : initialBucketCount),
-          count_(0) {}
+        : bucketCount_(initialBucketCount == 0 ? kDefaultBucketCount
+                                               : initialBucketCount),
+          buckets_(new Node*[bucketCount_]()), count_(0) {}
+
+    HashTable(const HashTable& other)
+        : bucketCount_(other.bucketCount_), buckets_(new Node*[bucketCount_]()),
+          count_(0) {
+        for (std::size_t i = 0; i < other.bucketCount_; ++i) {
+            for (const Node* node = other.buckets_[i]; node != nullptr;
+                 node = node->next) {
+                insert(node->key, node->value);
+            }
+        }
+    }
+
+    HashTable& operator=(const HashTable& other) {
+        if (this == &other) {
+            return *this;
+        }
+        HashTable copy(other);
+        swap(copy);
+        return *this;
+    }
+
+    ~HashTable() {
+        clear();
+        delete[] buckets_;
+    }
 
     static std::uint64_t hashString(const std::string& key) {
         std::uint64_t hash = 14695981039346656037ULL;
@@ -26,36 +49,37 @@ public:
     }
 
     std::size_t bucketIndex(const std::string& key) const {
-        return static_cast<std::size_t>(hashString(key) % buckets_.size());
+        return static_cast<std::size_t>(hashString(key) % bucketCount_);
     }
 
     bool insert(const std::string& key, const Value& value) {
         if (find(key) != nullptr) {
             return false;
         }
-        if ((count_ + 1) * 4 > buckets_.size() * 3) {
-            rehash(buckets_.size() * 2);
+        if ((count_ + 1) * 4 > bucketCount_ * 3) {
+            rehash(bucketCount_ * 2);
         }
-        buckets_[bucketIndex(key)].push_back({key, value});
+        const std::size_t index = bucketIndex(key);
+        buckets_[index] = new Node(key, value, buckets_[index]);
         ++count_;
         return true;
     }
 
     Value* find(const std::string& key) {
-        auto& bucket = buckets_[bucketIndex(key)];
-        for (auto& entry : bucket) {
-            if (entry.first == key) {
-                return &entry.second;
+        for (Node* node = buckets_[bucketIndex(key)]; node != nullptr;
+             node = node->next) {
+            if (node->key == key) {
+                return &node->value;
             }
         }
         return nullptr;
     }
 
     const Value* find(const std::string& key) const {
-        const auto& bucket = buckets_[bucketIndex(key)];
-        for (const auto& entry : bucket) {
-            if (entry.first == key) {
-                return &entry.second;
+        for (const Node* node = buckets_[bucketIndex(key)]; node != nullptr;
+             node = node->next) {
+            if (node->key == key) {
+                return &node->value;
             }
         }
         return nullptr;
@@ -64,33 +88,38 @@ public:
     bool contains(const std::string& key) const { return find(key) != nullptr; }
 
     bool remove(const std::string& key) {
-        auto& bucket = buckets_[bucketIndex(key)];
-        for (std::size_t i = 0; i < bucket.size(); ++i) {
-            if (bucket[i].first == key) {
-                if (i + 1 != bucket.size()) {
-                    bucket[i] = std::move(bucket.back());
-                }
-                bucket.pop_back();
+        Node** link = &buckets_[bucketIndex(key)];
+        while (*link != nullptr) {
+            if ((*link)->key == key) {
+                Node* removed = *link;
+                *link = removed->next;
+                delete removed;
                 --count_;
                 return true;
             }
+            link = &((*link)->next);
         }
         return false;
     }
 
     std::size_t size() const { return count_; }
-    std::size_t bucketCount() const { return buckets_.size(); }
+    std::size_t bucketCount() const { return bucketCount_; }
     bool empty() const { return count_ == 0; }
 
     double loadFactor() const {
-        return static_cast<double>(count_) / static_cast<double>(buckets_.size());
+        return static_cast<double>(count_) / static_cast<double>(bucketCount_);
     }
 
     std::size_t longestChain() const {
         std::size_t longest = 0;
-        for (const auto& bucket : buckets_) {
-            if (bucket.size() > longest) {
-                longest = bucket.size();
+        for (std::size_t i = 0; i < bucketCount_; ++i) {
+            std::size_t chainLength = 0;
+            for (const Node* node = buckets_[i]; node != nullptr;
+                 node = node->next) {
+                ++chainLength;
+            }
+            if (chainLength > longest) {
+                longest = chainLength;
             }
         }
         return longest;
@@ -100,8 +129,8 @@ public:
 
     std::size_t usedBucketCount() const {
         std::size_t used = 0;
-        for (const auto& bucket : buckets_) {
-            if (!bucket.empty()) {
+        for (std::size_t i = 0; i < bucketCount_; ++i) {
+            if (buckets_[i] != nullptr) {
                 ++used;
             }
         }
@@ -109,26 +138,61 @@ public:
     }
 
     void clear() {
-        for (auto& bucket : buckets_) {
-            bucket.clear();
+        for (std::size_t i = 0; i < bucketCount_; ++i) {
+            Node* node = buckets_[i];
+            while (node != nullptr) {
+                Node* next = node->next;
+                delete node;
+                node = next;
+            }
+            buckets_[i] = nullptr;
         }
         count_ = 0;
     }
 
 private:
-    using Entry = std::pair<std::string, Value>;
-    std::vector<std::vector<Entry>> buckets_;
+    struct Node {
+        std::string key;
+        Value value;
+        Node* next;
+
+        Node(const std::string& nodeKey, const Value& nodeValue, Node* nextNode)
+            : key(nodeKey), value(nodeValue), next(nextNode) {}
+    };
+
+    std::size_t bucketCount_;
+    Node** buckets_;
     std::size_t count_;
 
+    void swap(HashTable& other) {
+        const std::size_t oldBucketCount = bucketCount_;
+        bucketCount_ = other.bucketCount_;
+        other.bucketCount_ = oldBucketCount;
+
+        Node** oldBuckets = buckets_;
+        buckets_ = other.buckets_;
+        other.buckets_ = oldBuckets;
+
+        const std::size_t oldCount = count_;
+        count_ = other.count_;
+        other.count_ = oldCount;
+    }
+
     void rehash(std::size_t newBucketCount) {
-        std::vector<std::vector<Entry>> newBuckets(newBucketCount);
-        for (auto& bucket : buckets_) {
-            for (auto& entry : bucket) {
-                const std::size_t index =
-                    static_cast<std::size_t>(hashString(entry.first) % newBucketCount);
-                newBuckets[index].push_back(std::move(entry));
+        Node** newBuckets = new Node*[newBucketCount]();
+        for (std::size_t i = 0; i < bucketCount_; ++i) {
+            Node* node = buckets_[i];
+            while (node != nullptr) {
+                Node* next = node->next;
+                const std::size_t index = static_cast<std::size_t>(
+                    hashString(node->key) % newBucketCount);
+                node->next = newBuckets[index];
+                newBuckets[index] = node;
+                node = next;
             }
         }
-        buckets_.swap(newBuckets);
+        delete[] buckets_;
+        buckets_ = newBuckets;
+        bucketCount_ = newBucketCount;
     }
 };

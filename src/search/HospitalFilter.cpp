@@ -1,12 +1,10 @@
 #include "search/HospitalFilter.h"
 
-#include "model/Hospital.h"
-
-std::vector<Hospital> HospitalFilter::apply(
-    const std::vector<Hospital>& candidates,
+DynamicArray<Hospital> HospitalFilter::apply(
+    const DynamicArray<Hospital>& candidates,
     const FilterConditions& conditions
 ) {
-    std::vector<Hospital> result;
+    DynamicArray<Hospital> result;
     for (const Hospital& hospital : candidates) {
         // 미선택 조건은 통과시키고, 선택된 조건은 모두 일치해야 합니다.
         if ((conditions.district.empty() ||
