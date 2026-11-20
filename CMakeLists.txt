@@ -53,6 +53,8 @@ endfunction()
 if(BUILD_TESTS)
     enable_testing()
 
+    add_project_test(test_dynamic_array tests/test_dynamic_array.cpp)
+    add_project_test(test_filter tests/test_filter.cpp src/search/HospitalFilter.cpp)
     add_project_test(test_hash_table tests/test_hash_table.cpp)
     add_project_test(test_search tests/test_search.cpp src/search/SearchEngine.cpp)
     add_project_test(test_hospital_store tests/test_hospital_store.cpp

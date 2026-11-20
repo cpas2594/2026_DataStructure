@@ -7,7 +7,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 namespace {
 void requireTrue(bool ok, const char* expression, int line) {
@@ -32,16 +31,16 @@ Hospital makeHospital(const std::string& id, const std::string& name,
     return hospital;
 }
 
-void checkIds(const std::vector<Hospital>& result,
-              const std::vector<std::string>& expected) {
+void checkIds(const DynamicArray<Hospital>& result,
+              const DynamicArray<std::string>& expected) {
     CHECK(result.size() == expected.size());
     for (std::size_t i = 0; i < expected.size(); ++i) {
         CHECK(result[i].id == expected[i]);
     }
 }
 
-void checkHospitals(const std::vector<Hospital>& actual,
-                   const std::vector<Hospital>& expected) {
+void checkHospitals(const DynamicArray<Hospital>& actual,
+                   const DynamicArray<Hospital>& expected) {
     CHECK(actual.size() == expected.size());
     for (std::size_t i = 0; i < expected.size(); ++i) {
         CHECK(actual[i].id == expected[i].id);
@@ -54,7 +53,7 @@ void checkHospitals(const std::vector<Hospital>& actual,
 
 // 실제 CSV 행에서 확인한 값입니다. 자치구는 주소에서 확인했습니다.
 // CSV 파싱과 자치구 추출 자체는 데이터 모듈에서 검증합니다.
-std::vector<Hospital> makeCsvSamples() {
+DynamicArray<Hospital> makeCsvSamples() {
     return {
         makeHospital("A1100011", "가톨릭대학교여의도성모병원", "영등포구",
                      "종합병원", "지역응급의료센터"),
@@ -71,8 +70,8 @@ std::vector<Hospital> makeCsvSamples() {
 
 // 각 조건의 일치/불일치 조합 8개를 만드는 가상 데이터입니다.
 // 이름을 같게 두어 이름에 의한 중복 제거가 발생하지 않는지도 확인합니다.
-std::vector<Hospital> makeCombinationSamples() {
-    std::vector<Hospital> hospitals;
+DynamicArray<Hospital> makeCombinationSamples() {
+    DynamicArray<Hospital> hospitals;
     for (int mask = 0; mask < 8; ++mask) {
         hospitals.push_back(makeHospital(
             "T" + std::to_string(mask), "테스트병원",
@@ -84,7 +83,7 @@ std::vector<Hospital> makeCombinationSamples() {
     return hospitals;
 }
 
-std::vector<FilterConditions> makeConditionCombinations() {
+DynamicArray<FilterConditions> makeConditionCombinations() {
     return {
         {"", "", ""},
         {"영등포구", "", ""},
@@ -124,7 +123,7 @@ void testEmergencyTypeFilter() {
 void testAllConditionCombinations() {
     const auto hospitals = makeCombinationSamples();
     const auto conditions = makeConditionCombinations();
-    const std::vector<std::vector<std::string>> expected = {
+    const DynamicArray<DynamicArray<std::string>> expected = {
         {"T0", "T1", "T2", "T3", "T4", "T5", "T6", "T7"},
         {"T1", "T3", "T5", "T7"},
         {"T2", "T3", "T6", "T7"},
@@ -148,7 +147,7 @@ void testEachSelectedConditionMustMatch() {
 
 void testEmptyAndSingleCandidate() {
     const auto hospitals = makeCombinationSamples();
-    const std::vector<Hospital> single = {hospitals[7]};
+    const DynamicArray<Hospital> single = {hospitals[7]};
     for (const auto& conditions : makeConditionCombinations()) {
         checkIds(HospitalFilter::apply({}, conditions), {});
         checkIds(HospitalFilter::apply(single, conditions), {"T7"});
@@ -157,7 +156,7 @@ void testEmptyAndSingleCandidate() {
 }
 
 void testMissingFields() {
-    const std::vector<Hospital> hospitals = {
+    const DynamicArray<Hospital> hospitals = {
         makeHospital("D", "지역누락", "", "종합병원", "지역응급의료센터"),
         makeHospital("H", "병원종류누락", "영등포구", "", "지역응급의료센터"),
         makeHospital("E", "기관종류누락", "영등포구", "종합병원", "")
@@ -171,7 +170,7 @@ void testMissingFields() {
 
 void testCandidateScopeAndOrder() {
     const auto hospitals = makeCombinationSamples();
-    const std::vector<Hospital> candidates = {hospitals[7], hospitals[3], hospitals[1]};
+    const DynamicArray<Hospital> candidates = {hospitals[7], hospitals[3], hospitals[1]};
     checkIds(HospitalFilter::apply(candidates, {}), {"T7", "T3", "T1"});
     checkIds(HospitalFilter::apply(candidates, {"", "종합병원", ""}), {"T7", "T3"});
     checkIds(HospitalFilter::apply(candidates, {"영등포구", "종합병원", "지역응급의료센터"}), {"T7"});
