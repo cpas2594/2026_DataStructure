@@ -32,11 +32,8 @@ void ResultPrinter::printList(std::ostream& out, const DynamicArray<Hospital>& r
     out << kDivider << '\n';
     for (std::size_t i = 0; i < results.size(); ++i) {
         const Hospital& hospital = results[i];
-        out << '[' << (i + 1) << "] " << orNone(hospital.name)
-            << " (" << orNone(hospital.id) << ")"
-            << " | " << orNone(hospital.district)
-            << " | " << orNone(hospital.emergencyType)
-            << " | 응급실 " << orNone(hospital.emergencyPhone) << '\n';
+        out << ' ' << (i + 1) << ". " << orNone(hospital.name)
+            << " · " << orNone(hospital.district) << '\n';
     }
     out << kDivider << '\n';
     out << "* 실시간 병상 정보가 아닙니다. 방문 전 응급실 전화로 확인하세요.\n";
