@@ -58,6 +58,7 @@ if(BUILD_TESTS)
     add_project_test(test_filter tests/test_filter.cpp src/search/HospitalFilter.cpp)
     add_project_test(test_hash_table tests/test_hash_table.cpp)
     add_project_test(test_search tests/test_search.cpp src/search/SearchEngine.cpp)
+    add_project_test(test_sort tests/test_sort.cpp)
     add_project_test(test_hospital_store tests/test_hospital_store.cpp
         src/data/HospitalStore.cpp src/search/SearchEngine.cpp)
     add_project_executable(bench_search tools/bench_search.cpp
