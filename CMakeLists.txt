@@ -10,6 +10,7 @@ add_executable(emergency_search
     src/search/SearchEngine.cpp
     src/search/HospitalFilter.cpp
     src/ui/ConsoleUI.cpp
+    src/ui/ResultPrinter.cpp
 )
 
 # C++17을 사용하며 컴파일러 전용 언어 확장은 사용하지 않습니다.
