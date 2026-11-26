@@ -1,18 +1,12 @@
+#include "structures/BasicTypes.hpp"
 #include "structures/HashTable.hpp"
 
-#include <stdexcept>
-#include <sstream>
-#include <cstddef>
-#include <iostream>
-#include <string>
-#include <vector>
+
 
 namespace {
 void requireTrue(bool ok, const char* expression, const char* file, int line) {
     if (!ok) {
-        std::ostringstream message;
-        message << file << ':' << line << " CHECK failed: " << expression;
-        throw std::runtime_error(message.str());
+        throw ProjectError(Text(file) + ":" + numberText(line) + " CHECK failed: " + expression);
     }
 }
 }
@@ -30,10 +24,10 @@ int main() {
     CHECK(*table.find("A1100001") == 1);
 
     HashTable<int> collisions(16);
-    const std::size_t target = collisions.bucketIndex("collision-base");
-    std::string other;
+    const size_t target = collisions.bucketIndex("collision-base");
+    Text other;
     for (int i = 0; i < 2000; ++i) {
-        const std::string key = "different-key-" + std::to_string(i);
+        const Text key = "different-key-" + numberText(i);
         if (key != "collision-base" && collisions.bucketIndex(key) == target) {
             other = key;
             break;
@@ -48,17 +42,17 @@ int main() {
 
     HashTable<int> growing(2);
     for (int i = 0; i < 300; ++i) {
-        CHECK(growing.insert("K" + std::to_string(i), i));
+        CHECK(growing.insert("K" + numberText(i), i));
     }
     CHECK(growing.bucketCount() > 2);
     CHECK(growing.size() == 300);
     for (int i = 0; i < 300; ++i) {
-        CHECK(*growing.find("K" + std::to_string(i)) == i);
+        CHECK(*growing.find("K" + numberText(i)) == i);
     }
     const HashTable<int>& readonly = growing;
     CHECK(*readonly.find("K299") == 299);
 
-    HashTable<std::vector<std::string>> names;
+    HashTable<SearchArray<Text>> names;
     CHECK(names.insert("서울중앙병원", {"A1100001"}));
     names.find("서울중앙병원")->push_back("A1100007");
     CHECK(names.size() == 1);
@@ -89,7 +83,7 @@ int main() {
 
     HashTable<int> load(4);
     for (int i = 0; i < 1000; ++i) {
-        CHECK(load.insert("L" + std::to_string(i), i));
+        CHECK(load.insert("L" + numberText(i), i));
         CHECK(load.loadFactor() <= 0.75);
     }
     CHECK(load.size() == 1000);
@@ -100,6 +94,6 @@ int main() {
     CHECK(zero.bucketCount() == HashTable<int>::kDefaultBucketCount);
     CHECK(zero.insert("x", 1) && *zero.find("x") == 1);
 
-    std::cout << "[PASS] test_hash_table: insert, duplicate, chaining, rehash, name IDs, clear, FNV-1a, remove, collision stats\n";
+    consoleOut << "[PASS] test_hash_table: insert, duplicate, chaining, rehash, name IDs, clear, FNV-1a, remove, collision stats\n";
     return 0;
 }

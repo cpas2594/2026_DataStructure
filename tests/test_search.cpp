@@ -1,48 +1,43 @@
+#include "structures/BasicTypes.hpp"
 #include "search/SearchEngine.h"
 
-#include <stdexcept>
-#include <sstream>
-#include <iostream>
-#include <string>
-#include <vector>
+
 
 namespace {
 void requireTrue(bool ok, const char* expression, const char* file, int line) {
     if (!ok) {
-        std::ostringstream message;
-        message << file << ':' << line << " CHECK failed: " << expression;
-        throw std::runtime_error(message.str());
+        throw ProjectError(Text(file) + ":" + numberText(line) + " CHECK failed: " + expression);
     }
 }
 }
 #define CHECK(expression) requireTrue(static_cast<bool>(expression), #expression, __FILE__, __LINE__)
-Hospital makeHospital(const std::string& id, const std::string& name) {
+Hospital makeHospital(const Text& id, const Text& name) {
     Hospital h{};
     h.id = id;
     h.name = name;
     return h;
 }
 
-void addToIndexes(const std::vector<Hospital>& hospitals,
+void addToIndexes(const SearchArray<Hospital>& hospitals,
                   HospitalIdIndex& byId,
                   HospitalNameIndex& byName) {
-    for (std::size_t i = 0; i < hospitals.size(); ++i) {
+    for (size_t i = 0; i < hospitals.size(); ++i) {
         const Hospital& h = hospitals[i];
 
         if (!byId.insert(h.id, i)) {
             continue;
         }
-        const std::string name = SearchEngine::trim(h.name);
+        const Text name = SearchEngine::trim(h.name);
         if (auto* ids = byName.find(name)) {
             ids->push_back(h.id);
         } else {
-            CHECK(byName.insert(name, std::vector<std::string>{h.id}));
+            CHECK(byName.insert(name, SearchArray<Text>{h.id}));
         }
     }
 }
 
 int main() {
-    std::vector<Hospital> hospitals = {
+    SearchArray<Hospital> hospitals = {
         makeHospital("A1100001", "서울중앙병원"),
         makeHospital("A1100002", "한강병원"),
         makeHospital("A1100004", "늘봄병원"),
@@ -78,7 +73,7 @@ int main() {
     CHECK(engine.search("존재하지않는병원").empty());
     CHECK(engine.search("A0000000").empty());
 
-    const std::vector<Hospital> none;
+    const SearchArray<Hospital> none;
     HospitalIdIndex noneIds;
     HospitalNameIndex noneNames;
     SearchEngine emptyEngine(none, noneIds, noneNames);
@@ -98,7 +93,7 @@ int main() {
     CHECK(SearchEngine::normalizeId("가a1") == "가A1");
 
     {
-        const std::vector<Hospital> raw = {
+        const SearchArray<Hospital> raw = {
             makeHospital(" a1 ", "  가나병원 "),
             makeHospital("A1", "다른병원"),
             makeHospital("", "HPID없음"),
@@ -107,7 +102,7 @@ int main() {
         };
         HospitalIdIndex ids;
         HospitalNameIndex names;
-        std::vector<Hospital> stored;
+        SearchArray<Hospital> stored;
         for (const Hospital& h : raw) {
             if (SearchEngine::addToIndexes(h, stored.size(), ids, names)) {
                 stored.push_back(h);
@@ -129,13 +124,13 @@ int main() {
     }
 
     {
-        const std::vector<Hospital> tricky = {
+        const SearchArray<Hospital> tricky = {
             makeHospital("B100", "병원B"),
             makeHospital("B200", "B100"),
         };
         HospitalIdIndex ids;
         HospitalNameIndex names;
-        for (std::size_t i = 0; i < tricky.size(); ++i) {
+        for (size_t i = 0; i < tricky.size(); ++i) {
             SearchEngine::addToIndexes(tricky[i], i, ids, names);
         }
         SearchEngine e(tricky, ids, names);
@@ -144,6 +139,6 @@ int main() {
         CHECK(r.hospitals.size() == 1 && r.hospitals[0].id == "B100");
     }
 
-    std::cout << "[PASS] test_search: HPID, exact, duplicate names, partial, empty, missing, match type, HPID case, index rules, priority\n";
+    consoleOut << "[PASS] test_search: HPID, exact, duplicate names, partial, empty, missing, match type, HPID case, index rules, priority\n";
     return 0;
 }
