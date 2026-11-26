@@ -1,12 +1,13 @@
 #pragma once
-#include "structures/BasicTypes.hpp"
 
 #include "model/Hospital.h"
 #include "structures/HashTable.hpp"
+#include <cstddef>
+#include <string>
+#include "structures/DynamicArray.hpp"
 
-
-using HospitalIdIndex = HashTable<size_t>;
-using HospitalNameIndex = HashTable<SearchArray<Text>>;
+using HospitalIdIndex = HashTable<std::size_t>;
+using HospitalNameIndex = HashTable<DynamicArray<std::string>>;
 
 enum class MatchType {
     All,
@@ -17,30 +18,30 @@ enum class MatchType {
 
 struct SearchResult {
     MatchType matchType = MatchType::All;
-    SearchArray<Hospital> hospitals;
+    DynamicArray<Hospital> hospitals;
 };
 
 class SearchEngine {
 public:
-    SearchEngine(const SearchArray<Hospital>& hospitals,
+    SearchEngine(const DynamicArray<Hospital>& hospitals,
                  const HospitalIdIndex& byId,
                  const HospitalNameIndex& byName);
 
-    SearchResult searchDetailed(const Text& input) const;
+    SearchResult searchDetailed(const std::string& input) const;
 
-    SearchArray<Hospital> search(const Text& input) const;
+    DynamicArray<Hospital> search(const std::string& input) const;
 
-    static Text trim(const Text& input);
+    static std::string trim(const std::string& input);
 
-    static Text normalizeName(const Text& name);
+    static std::string normalizeName(const std::string& name);
 
-    static Text normalizeId(const Text& id);
+    static std::string normalizeId(const std::string& id);
 
-    static bool addToIndexes(const Hospital& hospital, size_t index,
+    static bool addToIndexes(const Hospital& hospital, std::size_t index,
                              HospitalIdIndex& byId, HospitalNameIndex& byName);
 
 private:
-    const SearchArray<Hospital>& hospitals_;
+    const DynamicArray<Hospital>& hospitals_;
     const HospitalIdIndex& byId_;
     const HospitalNameIndex& byName_;
 };

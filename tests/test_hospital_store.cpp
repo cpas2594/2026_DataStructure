@@ -1,20 +1,25 @@
-#include "structures/BasicTypes.hpp"
 #include "data/HospitalStore.h"
 
-
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include "structures/DynamicArray.hpp"
 
 namespace {
 void requireTrue(bool ok, const char* expression, const char* file, int line) {
     if (!ok) {
-        throw ProjectError(Text(file) + ":" + numberText(line) + " CHECK failed: " + expression);
+        std::ostringstream message;
+        message << file << ':' << line << " CHECK failed: " << expression;
+        throw std::runtime_error(message.str());
     }
 }
 }
 #define CHECK(expression) requireTrue(static_cast<bool>(expression), #expression, __FILE__, __LINE__)
 
 namespace {
-Hospital makeHospital(const Text& id, const Text& name,
-                      const Text& district = "") {
+Hospital makeHospital(const std::string& id, const std::string& name,
+                      const std::string& district = "") {
     Hospital h{};
     h.id = id;
     h.name = name;
@@ -30,7 +35,7 @@ int main() {
         CHECK(store.findById("A1100001") == nullptr);
         CHECK(store.findByName("서울중앙병원").empty());
 
-        const size_t added = store.addAll({
+        const std::size_t added = store.addAll({
             makeHospital("A1100001", "서울중앙병원", "중구"),
             makeHospital("A1100002", "한강병원", "용산구"),
             makeHospital("A1100007", "서울중앙병원", "종로구"),
@@ -61,7 +66,7 @@ int main() {
         CHECK(store.findByName("강남응급센터").size() == 1);
         CHECK(store.findByName("중복된행").empty());
 
-        SearchArray<Hospital> list = store.toHospitals({2, 0, 99});
+        DynamicArray<Hospital> list = store.toHospitals({2, 0, 99});
         CHECK(list.size() == 2);
         CHECK(list[0].district == "종로구" && list[1].district == "중구");
 
@@ -82,19 +87,19 @@ int main() {
 
         HospitalStore big;
         for (int i = 0; i < 500; ++i) {
-            big.add(makeHospital("H" + numberText(i), "병원" + numberText(i % 50)));
+            big.add(makeHospital("H" + std::to_string(i), "병원" + std::to_string(i % 50)));
         }
         CHECK(big.size() == 500);
         for (int i = 0; i < 500; ++i) {
-            const Hospital* h = big.findById("H" + numberText(i));
-            CHECK(h != nullptr && h->id == "H" + numberText(i));
+            const Hospital* h = big.findById("H" + std::to_string(i));
+            CHECK(h != nullptr && h->id == "H" + std::to_string(i));
         }
         CHECK(big.findByName("병원7").size() == 10);
-    } catch (const ProjectError& e) {
-        consoleErr << "[FAIL] " << e.what() << '\n';
+    } catch (const std::exception& e) {
+        std::cerr << "[FAIL] " << e.what() << '\n';
         return 1;
     }
 
-    consoleOut << "[PASS] test_hospital_store: add, duplicate HPID, empty HPID, name index, SearchEngine link, rehash\n";
+    std::cout << "[PASS] test_hospital_store: add, duplicate HPID, empty HPID, name index, SearchEngine link, rehash\n";
     return 0;
 }

@@ -1,43 +1,48 @@
-#include "structures/BasicTypes.hpp"
 #include "search/SearchEngine.h"
 
-
+#include <stdexcept>
+#include <sstream>
+#include <iostream>
+#include <string>
+#include "structures/DynamicArray.hpp"
 
 namespace {
 void requireTrue(bool ok, const char* expression, const char* file, int line) {
     if (!ok) {
-        throw ProjectError(Text(file) + ":" + numberText(line) + " CHECK failed: " + expression);
+        std::ostringstream message;
+        message << file << ':' << line << " CHECK failed: " << expression;
+        throw std::runtime_error(message.str());
     }
 }
 }
 #define CHECK(expression) requireTrue(static_cast<bool>(expression), #expression, __FILE__, __LINE__)
-Hospital makeHospital(const Text& id, const Text& name) {
+Hospital makeHospital(const std::string& id, const std::string& name) {
     Hospital h{};
     h.id = id;
     h.name = name;
     return h;
 }
 
-void addToIndexes(const SearchArray<Hospital>& hospitals,
+void addToIndexes(const DynamicArray<Hospital>& hospitals,
                   HospitalIdIndex& byId,
                   HospitalNameIndex& byName) {
-    for (size_t i = 0; i < hospitals.size(); ++i) {
+    for (std::size_t i = 0; i < hospitals.size(); ++i) {
         const Hospital& h = hospitals[i];
 
         if (!byId.insert(h.id, i)) {
             continue;
         }
-        const Text name = SearchEngine::trim(h.name);
+        const std::string name = SearchEngine::trim(h.name);
         if (auto* ids = byName.find(name)) {
             ids->push_back(h.id);
         } else {
-            CHECK(byName.insert(name, SearchArray<Text>{h.id}));
+            CHECK(byName.insert(name, DynamicArray<std::string>{h.id}));
         }
     }
 }
 
 int main() {
-    SearchArray<Hospital> hospitals = {
+    DynamicArray<Hospital> hospitals = {
         makeHospital("A1100001", "서울중앙병원"),
         makeHospital("A1100002", "한강병원"),
         makeHospital("A1100004", "늘봄병원"),
@@ -73,7 +78,7 @@ int main() {
     CHECK(engine.search("존재하지않는병원").empty());
     CHECK(engine.search("A0000000").empty());
 
-    const SearchArray<Hospital> none;
+    const DynamicArray<Hospital> none;
     HospitalIdIndex noneIds;
     HospitalNameIndex noneNames;
     SearchEngine emptyEngine(none, noneIds, noneNames);
@@ -93,7 +98,7 @@ int main() {
     CHECK(SearchEngine::normalizeId("가a1") == "가A1");
 
     {
-        const SearchArray<Hospital> raw = {
+        const DynamicArray<Hospital> raw = {
             makeHospital(" a1 ", "  가나병원 "),
             makeHospital("A1", "다른병원"),
             makeHospital("", "HPID없음"),
@@ -102,7 +107,7 @@ int main() {
         };
         HospitalIdIndex ids;
         HospitalNameIndex names;
-        SearchArray<Hospital> stored;
+        DynamicArray<Hospital> stored;
         for (const Hospital& h : raw) {
             if (SearchEngine::addToIndexes(h, stored.size(), ids, names)) {
                 stored.push_back(h);
@@ -124,13 +129,13 @@ int main() {
     }
 
     {
-        const SearchArray<Hospital> tricky = {
+        const DynamicArray<Hospital> tricky = {
             makeHospital("B100", "병원B"),
             makeHospital("B200", "B100"),
         };
         HospitalIdIndex ids;
         HospitalNameIndex names;
-        for (size_t i = 0; i < tricky.size(); ++i) {
+        for (std::size_t i = 0; i < tricky.size(); ++i) {
             SearchEngine::addToIndexes(tricky[i], i, ids, names);
         }
         SearchEngine e(tricky, ids, names);
@@ -139,6 +144,6 @@ int main() {
         CHECK(r.hospitals.size() == 1 && r.hospitals[0].id == "B100");
     }
 
-    consoleOut << "[PASS] test_search: HPID, exact, duplicate names, partial, empty, missing, match type, HPID case, index rules, priority\n";
+    std::cout << "[PASS] test_search: HPID, exact, duplicate names, partial, empty, missing, match type, HPID case, index rules, priority\n";
     return 0;
 }

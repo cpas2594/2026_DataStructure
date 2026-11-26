@@ -1,15 +1,15 @@
 #pragma once
-#include "structures/BasicTypes.hpp"
 
+#include <string>
 
 struct Hospital {
-    Text id;
-    Text name;
-    Text district;
-    Text hospitalType;
-    Text emergencyType;
-    Text address;
-    Text phone;
-    Text emergencyPhone;
+    std::string id;
+    std::string name;
+    std::string district;
+    std::string hospitalType;
+    std::string emergencyType;
+    std::string address;
+    std::string phone;
+    std::string emergencyPhone;
     bool emergencyRoomOpen = false;
 };
