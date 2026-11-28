@@ -25,6 +25,10 @@ target_include_directories(emergency_search PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
+# CSV를 현재 폴더에서 못 찾을 때 쓰는 프로젝트 data 폴더 경로 (한글 파일명은 코드에서 붙임)
+target_compile_definitions(emergency_search PRIVATE
+    EMERGENCY_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+
 # 컴파일러는 사용자의 환경에서 선택합니다. 설치 경로를 고정하지 않습니다.
 if(MSVC)
     target_compile_options(emergency_search PRIVATE /W4 /utf-8)
@@ -61,6 +65,12 @@ if(BUILD_TESTS)
     add_project_test(test_sort tests/test_sort.cpp)
     add_project_test(test_hospital_store tests/test_hospital_store.cpp
         src/data/HospitalStore.cpp src/search/SearchEngine.cpp)
+    add_project_test(test_csv_loader tests/test_csv_loader.cpp
+        src/data/CsvLoader.cpp src/data/HospitalStore.cpp src/search/SearchEngine.cpp)
+    # 실제 CSV 검사용: 한글 파일명은 코드에서 붙이고, 여기서는 폴더 경로만 넘김
+    target_compile_definitions(test_csv_loader PRIVATE
+        EMERGENCY_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+
     add_project_executable(bench_search tools/bench_search.cpp
         src/data/HospitalStore.cpp src/search/SearchEngine.cpp)
 endif()
