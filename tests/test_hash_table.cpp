@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <iostream>
 #include <string>
-#include <vector>
+#include "structures/DynamicArray.hpp"
 
 namespace {
 void requireTrue(bool ok, const char* expression, const char* file, int line) {
@@ -58,7 +58,7 @@ int main() {
     const HashTable<int>& readonly = growing;
     CHECK(*readonly.find("K299") == 299);
 
-    HashTable<std::vector<std::string>> names;
+    HashTable<DynamicArray<std::string>> names;
     CHECK(names.insert("서울중앙병원", {"A1100001"}));
     names.find("서울중앙병원")->push_back("A1100007");
     CHECK(names.size() == 1);

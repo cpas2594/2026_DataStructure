@@ -4,10 +4,10 @@
 #include "structures/HashTable.hpp"
 #include <cstddef>
 #include <string>
-#include <vector>
+#include "structures/DynamicArray.hpp"
 
 using HospitalIdIndex = HashTable<std::size_t>;
-using HospitalNameIndex = HashTable<std::vector<std::string>>;
+using HospitalNameIndex = HashTable<DynamicArray<std::string>>;
 
 enum class MatchType {
     All,
@@ -18,18 +18,18 @@ enum class MatchType {
 
 struct SearchResult {
     MatchType matchType = MatchType::All;
-    std::vector<Hospital> hospitals;
+    DynamicArray<Hospital> hospitals;
 };
 
 class SearchEngine {
 public:
-    SearchEngine(const std::vector<Hospital>& hospitals,
+    SearchEngine(const DynamicArray<Hospital>& hospitals,
                  const HospitalIdIndex& byId,
                  const HospitalNameIndex& byName);
 
     SearchResult searchDetailed(const std::string& input) const;
 
-    std::vector<Hospital> search(const std::string& input) const;
+    DynamicArray<Hospital> search(const std::string& input) const;
 
     static std::string trim(const std::string& input);
 
@@ -41,7 +41,7 @@ public:
                              HospitalIdIndex& byId, HospitalNameIndex& byName);
 
 private:
-    const std::vector<Hospital>& hospitals_;
+    const DynamicArray<Hospital>& hospitals_;
     const HospitalIdIndex& byId_;
     const HospitalNameIndex& byName_;
 };

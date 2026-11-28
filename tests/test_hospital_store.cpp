@@ -4,7 +4,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <vector>
+#include "structures/DynamicArray.hpp"
 
 namespace {
 void requireTrue(bool ok, const char* expression, const char* file, int line) {
@@ -66,7 +66,7 @@ int main() {
         CHECK(store.findByName("강남응급센터").size() == 1);
         CHECK(store.findByName("중복된행").empty());
 
-        std::vector<Hospital> list = store.toHospitals({2, 0, 99});
+        DynamicArray<Hospital> list = store.toHospitals({2, 0, 99});
         CHECK(list.size() == 2);
         CHECK(list[0].district == "종로구" && list[1].district == "중구");
 

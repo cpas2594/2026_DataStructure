@@ -3,7 +3,7 @@
 #include <chrono>
 #include <cstdio>
 #include <string>
-#include <vector>
+#include "structures/DynamicArray.hpp"
 
 namespace {
 
@@ -12,13 +12,13 @@ using Clock = std::chrono::steady_clock;
 volatile std::size_t g_sink = 0;
 
 std::string makeId(std::size_t i) {
-    char buffer[16];
+    char buffer[32];
     std::snprintf(buffer, sizeof(buffer), "A%07zu", i);
     return buffer;
 }
 
-std::vector<Hospital> makeHospitals(std::size_t n) {
-    std::vector<Hospital> hospitals;
+DynamicArray<Hospital> makeHospitals(std::size_t n) {
+    DynamicArray<Hospital> hospitals;
     hospitals.reserve(n);
     for (std::size_t i = 0; i < n; ++i) {
         Hospital h{};
@@ -49,21 +49,27 @@ std::size_t stringBytes(const std::string& s) {
 std::size_t estimateIndexBytes(const HospitalStore& store) {
     const HospitalIdIndex& byId = store.idIndex();
     const HospitalNameIndex& byName = store.nameIndex();
-    std::size_t bytes = byId.bucketCount() * sizeof(std::vector<std::pair<std::string, std::size_t>>);
-    bytes += byName.bucketCount() * sizeof(std::vector<std::pair<std::string, std::vector<std::string>>>);
+    // Approximate actual chaining storage (excludes allocator overhead).
+    struct IdNode { std::string key; std::size_t value; void* next; };
+    struct NameNode { std::string key; DynamicArray<std::string> value; void* next; };
+    std::size_t bytes = (byId.bucketCount() + byName.bucketCount()) * sizeof(void*);
+    bytes += byId.size() * sizeof(IdNode) + byName.size() * sizeof(NameNode);
     for (const Hospital& h : store.hospitals()) {
-        bytes += stringBytes(h.id) + sizeof(std::size_t);
-        bytes += stringBytes(h.id);
+        bytes += stringBytes(h.id) - sizeof(std::string); // ID key storage
+        const auto* ids = byName.find(h.name);
+        if (ids && !ids->empty() && (*ids)[0] == h.id) {
+            bytes += stringBytes(h.name) - sizeof(std::string);
+            bytes += ids->capacity() * sizeof(std::string);
+            for (const auto& id : *ids) bytes += stringBytes(id) - sizeof(std::string);
+        }
     }
-    bytes += byName.size() *
-             (sizeof(std::string) + 16 + sizeof(std::vector<std::string>));
     return bytes;
 }
 
 }
 
 int main() {
-    const std::vector<std::size_t> sizes = {1000, 5000, 10000, 50000, 100000, 200000};
+    const DynamicArray<std::size_t> sizes = {1000, 5000, 10000, 50000, 100000, 200000};
 
     std::printf("%8s | %10s %10s %10s %10s | %6s %8s %7s | %10s\n",
                 "N", "HPID해시", "HPID순차", "이름해시", "부분검색",
@@ -74,7 +80,7 @@ int main() {
         HospitalStore store;
         store.addAll(makeHospitals(n));
         const SearchEngine engine = store.makeSearchEngine();
-        const std::vector<Hospital>& all = store.hospitals();
+        const DynamicArray<Hospital>& all = store.hospitals();
 
         const std::size_t fastRepeat = 20000;
         const std::size_t slowRepeat = n >= 50000 ? 20 : 200;

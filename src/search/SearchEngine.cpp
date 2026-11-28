@@ -2,7 +2,7 @@
 
 #include <cctype>
 
-SearchEngine::SearchEngine(const std::vector<Hospital>& hospitals,
+SearchEngine::SearchEngine(const DynamicArray<Hospital>& hospitals,
                            const HospitalIdIndex& byId,
                            const HospitalNameIndex& byName)
     : hospitals_(hospitals), byId_(byId), byName_(byName) {}
@@ -46,10 +46,10 @@ bool SearchEngine::addToIndexes(const Hospital& hospital, std::size_t index,
     if (name.empty()) {
         return true;
     }
-    if (std::vector<std::string>* ids = byName.find(name)) {
+    if (DynamicArray<std::string>* ids = byName.find(name)) {
         ids->push_back(id);
     } else {
-        byName.insert(name, std::vector<std::string>{id});
+        byName.insert(name, DynamicArray<std::string>{id});
     }
     return true;
 }
@@ -74,7 +74,7 @@ SearchResult SearchEngine::searchDetailed(const std::string& input) const {
         }
     }
 
-    if (const std::vector<std::string>* ids = byName_.find(key)) {
+    if (const DynamicArray<std::string>* ids = byName_.find(key)) {
         result.hospitals.reserve(ids->size());
         for (const std::string& id : *ids) {
             const std::size_t* index = byId_.find(id);
@@ -98,6 +98,6 @@ SearchResult SearchEngine::searchDetailed(const std::string& input) const {
     return result;
 }
 
-std::vector<Hospital> SearchEngine::search(const std::string& input) const {
+DynamicArray<Hospital> SearchEngine::search(const std::string& input) const {
     return searchDetailed(input).hospitals;
 }

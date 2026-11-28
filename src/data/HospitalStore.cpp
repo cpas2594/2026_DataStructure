@@ -22,7 +22,7 @@ bool HospitalStore::add(const Hospital& hospital) {
     return true;
 }
 
-std::size_t HospitalStore::addAll(const std::vector<Hospital>& hospitals) {
+std::size_t HospitalStore::addAll(const DynamicArray<Hospital>& hospitals) {
     std::size_t added = 0;
     for (const Hospital& hospital : hospitals) {
         if (add(hospital)) {
@@ -42,7 +42,7 @@ const Hospital* HospitalStore::findById(const std::string& id) const {
 
 HospitalIndexList HospitalStore::findByName(const std::string& name) const {
     HospitalIndexList result;
-    const std::vector<std::string>* ids =
+    const DynamicArray<std::string>* ids =
         byName_.find(SearchEngine::normalizeName(name));
     if (ids == nullptr) {
         return result;
@@ -56,8 +56,8 @@ HospitalIndexList HospitalStore::findByName(const std::string& name) const {
     return result;
 }
 
-std::vector<Hospital> HospitalStore::toHospitals(const HospitalIndexList& indexes) const {
-    std::vector<Hospital> result;
+DynamicArray<Hospital> HospitalStore::toHospitals(const HospitalIndexList& indexes) const {
+    DynamicArray<Hospital> result;
     result.reserve(indexes.size());
     for (std::size_t index : indexes) {
         if (index < hospitals_.size()) {

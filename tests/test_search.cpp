@@ -4,7 +4,7 @@
 #include <sstream>
 #include <iostream>
 #include <string>
-#include <vector>
+#include "structures/DynamicArray.hpp"
 
 namespace {
 void requireTrue(bool ok, const char* expression, const char* file, int line) {
@@ -23,7 +23,7 @@ Hospital makeHospital(const std::string& id, const std::string& name) {
     return h;
 }
 
-void addToIndexes(const std::vector<Hospital>& hospitals,
+void addToIndexes(const DynamicArray<Hospital>& hospitals,
                   HospitalIdIndex& byId,
                   HospitalNameIndex& byName) {
     for (std::size_t i = 0; i < hospitals.size(); ++i) {
@@ -36,13 +36,13 @@ void addToIndexes(const std::vector<Hospital>& hospitals,
         if (auto* ids = byName.find(name)) {
             ids->push_back(h.id);
         } else {
-            CHECK(byName.insert(name, std::vector<std::string>{h.id}));
+            CHECK(byName.insert(name, DynamicArray<std::string>{h.id}));
         }
     }
 }
 
 int main() {
-    std::vector<Hospital> hospitals = {
+    DynamicArray<Hospital> hospitals = {
         makeHospital("A1100001", "서울중앙병원"),
         makeHospital("A1100002", "한강병원"),
         makeHospital("A1100004", "늘봄병원"),
@@ -78,7 +78,7 @@ int main() {
     CHECK(engine.search("존재하지않는병원").empty());
     CHECK(engine.search("A0000000").empty());
 
-    const std::vector<Hospital> none;
+    const DynamicArray<Hospital> none;
     HospitalIdIndex noneIds;
     HospitalNameIndex noneNames;
     SearchEngine emptyEngine(none, noneIds, noneNames);
@@ -98,7 +98,7 @@ int main() {
     CHECK(SearchEngine::normalizeId("가a1") == "가A1");
 
     {
-        const std::vector<Hospital> raw = {
+        const DynamicArray<Hospital> raw = {
             makeHospital(" a1 ", "  가나병원 "),
             makeHospital("A1", "다른병원"),
             makeHospital("", "HPID없음"),
@@ -107,7 +107,7 @@ int main() {
         };
         HospitalIdIndex ids;
         HospitalNameIndex names;
-        std::vector<Hospital> stored;
+        DynamicArray<Hospital> stored;
         for (const Hospital& h : raw) {
             if (SearchEngine::addToIndexes(h, stored.size(), ids, names)) {
                 stored.push_back(h);
@@ -129,7 +129,7 @@ int main() {
     }
 
     {
-        const std::vector<Hospital> tricky = {
+        const DynamicArray<Hospital> tricky = {
             makeHospital("B100", "병원B"),
             makeHospital("B200", "B100"),
         };
